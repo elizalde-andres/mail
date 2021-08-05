@@ -78,8 +78,8 @@ function load_mailbox(mailbox) {
       
       //Create div with mail info
       const emailDiv = document.createElement('div');
-      emailDiv.className = `mailInfo ${readEmail}`
-      emailDiv.innerHTML = `<a href="#">[${email.sender}] ${email.subject} ${email.timestamp}</a>`;
+      emailDiv.className = `mail-info ${readEmail}`
+      emailDiv.innerHTML = `[${email.sender}] ${email.subject} ${email.timestamp}`;
       emailDiv.addEventListener('click', function() {
           view_email(email.id, mailbox);
       });
