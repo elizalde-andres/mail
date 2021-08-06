@@ -74,6 +74,14 @@ function load_mailbox(mailbox) {
   // Show the mailbox name
   emailsView.innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
+  // Show column titles
+  const titlesRow = document.createElement('div');
+  titlesRow.classList.add("row", "mail-title");
+  const from_to = mailbox == "sent" ? "To" : "From";
+  titlesRow.innerHTML = `<div class="col-md-3 align-self-start"><h5>${from_to}</h5></div>
+                        <div class="col-md-6 align-self-start"><h5>Subject</h5></div> 
+                        <div class="col-md-3 align-self-end text-right"><h5>Timestamp</h5></div>`;
+  emailsView.append(titlesRow);
   //Get emails from the mailbox
   fetch(`/emails/${mailbox}`)
   .then(response => response.json())
@@ -84,8 +92,9 @@ function load_mailbox(mailbox) {
       const emailRow = document.createElement('div');
       emailRow.classList.add("row", "mail-info", email.read ? "read" : "unread");
       
-      
-      emailRow.innerHTML = `<div class="col-md-3 align-self-start">[${email.sender}]</div>
+      const sender_recipients = mailbox == "sent" ? email.recipients : email.sender;
+
+      emailRow.innerHTML = `<div class="col-md-3 align-self-start">[${sender_recipients}]</div>
                             <div class="col-md-6 align-self-start">${email.subject}</div> 
                             <div class="col-md-3 align-self-end text-right">${email.timestamp}</div>`;
       emailRow.addEventListener('click', function() {

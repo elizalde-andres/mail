@@ -38,3 +38,7 @@ textarea {
 .subject {
     margin-top: 8px;
 }
+
+pre {
+    white-space: pre-wrap;
+}
