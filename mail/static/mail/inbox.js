@@ -11,22 +11,27 @@ document.addEventListener('DOMContentLoaded', function() {
     
 });
 
-function compose_email(recipientPrefill = '', subjectPrefill = '', bodyPrefill = '') {
+function compose_email(prefill = {recipient : "", subject : "", body: ""}, message = "") {
 
-  const recipients = document.querySelector('#compose-recipients')
-  const subject = document.querySelector('#compose-subject')
-  const body = document.querySelector('#compose-body')
+  const recipients = document.querySelector('#compose-recipients');
+  const subject = document.querySelector('#compose-subject');
+  const body = document.querySelector('#compose-body');
+  const message_view = document.querySelector('#message-view');
+  
 
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
+  message_view.style.display = message == "" ? 'none' : 'block';
 
-  // Clear out composition fields
-  recipients.value = recipientPrefill;
-  subject.value = subjectPrefill;
-  body.value = bodyPrefill;
+  //Show message
+  message_view.innerHTML = `<div class='alert alert-danger'>${message}</div>`;
 
+  // Prefill composition fields
+  recipients.value = prefill.recipient;
+  subject.value = prefill.subject;
+  body.value = prefill.body;
 
   //Send email
   document.querySelector('#compose-form').onsubmit = () => {
@@ -41,13 +46,14 @@ function compose_email(recipientPrefill = '', subjectPrefill = '', bodyPrefill =
     
     .then( async response => {
       const result = await response.json();
-
       if (response.ok) {
         load_mailbox('sent')
       } else {
-        //TODO:Show error if mail was not sent
-        alert(`${result.error}`),
-        console.log("Error "+ response.status + ": " + result.error)
+        compose_email({
+          recipient : recipients.value,
+          subject : subject.value,
+          body : body.value
+        }, result.error)
       }
     })
 
@@ -63,6 +69,7 @@ function load_mailbox(mailbox) {
   emailsView.style.display = 'block';
   document.querySelector('#email-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#message-view').style.display = 'none';
 
   // Show the mailbox name
   emailsView.innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
@@ -72,26 +79,26 @@ function load_mailbox(mailbox) {
   .then(response => response.json())
   .then(emails => {
     // Show emails
-    emails.forEach(email => {
-      let readEmail = "unread";
-      if (email.read) readEmail = "read"
-      
+    emails.forEach(email => {      
       //Create div with mail info
-      const emailDiv = document.createElement('div');
-      emailDiv.className = `mail-info ${readEmail}`
-      emailDiv.innerHTML = `[${email.sender}] ${email.subject} ${email.timestamp}`;
-      emailDiv.addEventListener('click', function() {
+      const emailRow = document.createElement('div');
+      emailRow.classList.add("row", "mail-info", email.read ? "read" : "unread");
+      
+      
+      emailRow.innerHTML = `<div class="col-md-3 align-self-start">[${email.sender}]</div>
+                            <div class="col-md-6 align-self-start">${email.subject}</div> 
+                            <div class="col-md-3 align-self-end text-right">${email.timestamp}</div>`;
+      emailRow.addEventListener('click', function() {
           view_email(email.id, mailbox);
       });
-      emailsView.append(emailDiv);
+      emailsView.append(emailRow);
     });
   });
 }
 
 //Shows the content of email.
 //First parameter: id of the email.
-//Second parameter: 'archive' if the mail is shown from inbox mailbox or
-//                  'unarchive' if the mail is shown from archive mailbox
+//Second parameter: origin mailbox (from which the function was called)
 function view_email(id, mailbox) {
   const emailView = document.querySelector('#email-view');
 
@@ -99,6 +106,7 @@ function view_email(id, mailbox) {
   emailView.style.display = 'block';
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'none';
+  document.querySelector('#message-view').style.display = 'none';
 
   //Clear emailview
   emailView.innerHTML = ''
@@ -108,12 +116,14 @@ function view_email(id, mailbox) {
   .then(response => response.json())
   .then(email => {
       //Create div with mail
-      const emailDiv = document.createElement('div');
-      emailDiv.className = `fullEmail`
-      emailDiv.innerHTML = `<p>From: [${email.sender}] to ${email.recipients} at ${email.timestamp}</p>
-                            <p><strong>${email.subject}</strong></p>
-                            <p>${email.body}</p>`;
-      emailView.append(emailDiv);
+      const emailContent = document.createElement('div');
+      emailContent.className = "full-email"
+      emailContent.innerHTML = `<div><em>From:</em> ${email.sender}</div> 
+                                <div><em>To:</em> ${email.recipients}</div>
+                                <div class="timestamp">${email.timestamp}</div>
+                                <h4 class="subject">${email.subject}</h4>
+                                <div class="email-body"><pre>${email.body}</pre></div>`;
+      emailView.append(emailContent);
       
       //Add archive/unarchive and reply buttons to emails in inbox or archived mailboxes
       if (mailbox != 'sent') { 
@@ -121,8 +131,7 @@ function view_email(id, mailbox) {
         const archiveButton = document.createElement('button');
         buttonAction = 'archive';
         if (mailbox == 'archive') buttonAction = 'unarchive'
-        archiveButton.className = buttonAction;
-        archiveButton.type = "button";
+        archiveButton.className = "btn btn-sm btn-outline-info";
         archiveButton.innerHTML = buttonAction.charAt(0).toUpperCase() + buttonAction.slice(1);
 
         // Archive/Unarchive email
@@ -144,14 +153,17 @@ function view_email(id, mailbox) {
 
         // Create reply button
         const replyButton = document.createElement('button');
-        replyButton.className = 'reply';
-        replyButton.type = "button";
+        replyButton.className = "btn btn-sm btn-outline-success";
         replyButton.innerHTML = 'Reply';
         replyButton.addEventListener('click', function () {
-          const recipientPrefill = email.sender;
-          const subjectPrefill = email.subject.slice(0,4) == 'Re: ' ? email.subject : `Re: ${email.subject}`;
-          const bodyPrefill = `\n\nOn ${email.timestamp} ${email.sender} wrote:\n${email.body}`;
-          compose_email(recipientPrefill, subjectPrefill, bodyPrefill);
+          const bodyText = email.body.replace(/^([^\n])/gm, '>$1');
+          const prefill = {
+            recipient: email.sender,
+            subject: email.subject.slice(0,4) == 'Re: ' ? email.subject : `Re: ${email.subject}`,
+            body: `\n\n>On ${email.timestamp} ${email.sender} wrote:\n${bodyText}`,
+          }
+          
+          compose_email(prefill);
         });
 
         emailView.append(replyButton);

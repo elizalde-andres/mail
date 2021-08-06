@@ -3,15 +3,38 @@ textarea {
 }
 
 .mail-info {
-    border: 1px solid darkslategray;
-    margin-bottom: 3px;
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
+    margin-bottom: -1px;
     padding: 2px;
+    position: relative;
+}
+
+.mail-info:hover {
+    cursor: pointer;
+    background-color: #dfdfdf; 
+    box-shadow: 1px 1px #888888;
+    z-index: 1;
+
 }
 
 .read {
-    background-color: #dfdfdf;
+    background-color: #efefef;
 }
 
 .unread {
     background-color: white;
+    font-weight: bold;
+}
+
+.timestamp {
+    font-size: smaller;
+    color: gray;
+    margin-top: 2px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #dfdfdf;;
+}
+
+.subject {
+    margin-top: 8px;
 }
